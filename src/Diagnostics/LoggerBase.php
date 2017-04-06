@@ -7,17 +7,24 @@ namespace QuickBooksOnline\API\Diagnostics;
  */
 class LoggerBase {
 
-	/**
-	 * Logs messages depending on the ids trace level.
-	 *
-	 * @param TraceLevel $idsTraceLevel IDS Trace Level.
-	 * @param string $messageToWrite The message to write.
-	 *
-	 */
-	public function Log($idsTraceLevel, $messageToWrite)
-	{
-		file_put_contents(PATH_SDK_ROOT . 'executionlog.txt', $messageToWrite."\n", FILE_APPEND);
-	}
-}
+    public $ServiceRequestLoggingLocation = PATH_SDK_ROOT;
+    public $EnableRequestResponseLogging = 'false';
 
-?>
+    /**
+     * Logs messages depending on the ids trace level.
+     *
+     * @param TraceLevel $idsTraceLevel IDS Trace Level.
+     * @param string $messageToWrite The message to write.
+     *
+     */
+    public function Log($idsTraceLevel, $messageToWrite)
+    {
+        if ($this->EnableRequestResponseLogging === 'true') {
+            file_put_contents(
+                $this->ServiceRequestLoggingLocation . 'executionlog.txt',
+                $messageToWrite . "\n",
+                FILE_APPEND
+            );
+        }
+    }
+}
