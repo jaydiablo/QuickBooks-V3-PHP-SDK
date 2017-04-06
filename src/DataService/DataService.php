@@ -616,10 +616,11 @@ class DataService {
     public function Query($query, $pageNumber = 0, $pageSize = 500) {
         $this->serviceContext->IppConfiguration->Logger->RequestLog->Log(TraceLevel::Info, "Called Method Query.");
 
-        if ('QBO' == $this->serviceContext->serviceType)
+        if ('QBO' == $this->serviceContext->serviceType) {
             $httpsContentType = CoreConstants::CONTENTTYPE_APPLICATIONTEXT;
-        else
+        } else {
             $httpsContentType = CoreConstants::CONTENTTYPE_TEXTPLAIN;
+        }
 
         $httpsUri = implode(CoreConstants::SLASH_CHAR, array('company', $this->serviceContext->realmId, 'query'));
         $httpsPostBody = $query;
@@ -628,27 +629,30 @@ class DataService {
         $restRequestHandler = new SyncRestHandler($this->serviceContext);
         list($responseCode, $responseBody) = $restRequestHandler->GetResponse($requestParameters, $httpsPostBody, NULL);
         $faultHandler = $restRequestHandler->getFaultHandler();
-        if(isset($faultHandler)){
+        if (isset($faultHandler)) {
             $this->lastError = $faultHandler;
-            return NULL;
-        }else{
-          $parsedResponseBody = NULL;
-          try {
-              $responseXmlObj = simplexml_load_string($responseBody);
-              //
-              //var_dump($responseXmlObj);
-              if ($responseXmlObj && $responseXmlObj->QueryResponse)
-                  $tmpXML = $responseXmlObj->QueryResponse->asXML();
-                  $parsedResponseBody = $this->responseSerializer->Deserialize($tmpXML, FALSE);
-                  //echo "Parsed Body is: \n";
-                  //var_dump($parsedResponseBody);
-                  //echo "\n Parsed Body over.\n";
-          } catch (Exception $e) {
-              throw new Exception("Exception appears in converting Response to XML.");
-          }
-          return $parsedResponseBody;
-        }
 
+            return NULL;
+        } else {
+            $parsedResponseBody = NULL;
+            try {
+                //See: http://stackoverflow.com/questions/12229572/php-generated-xml-shows-invalid-char-value-27-message
+                $responseBody = preg_replace(
+                    '/[^\x{0009}\x{000a}\x{000d}\x{0020}-\x{D7FF}\x{E000}-\x{FFFD}]+/u',
+                    ' ',
+                    $responseBody
+                );
+                $responseXmlObj = simplexml_load_string($responseBody);
+                if ($responseXmlObj && $responseXmlObj->QueryResponse) {
+                    $tmpXML = $responseXmlObj->QueryResponse->asXML();
+                }
+                $parsedResponseBody = $this->responseSerializer->Deserialize($tmpXML, FALSE);
+            } catch (Exception $e) {
+                throw new Exception("Exception appears in converting Response to XML.");
+            }
+
+            return $parsedResponseBody;
+        }
     }
 
     /**
